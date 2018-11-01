@@ -89,6 +89,18 @@ if not SOURCE2:
 # target dataset
 TARGET = os.environ.get('TARGET')
 
+SETTINGS_FILE = os.environ.get('SETTINGS', "__settings_file.bin")
+if SETTINGS_FILE.startswith('http'):
+    logging.info("Found URL, retrieving trained model")
+    r = requests.get(SETTINGS_FILE, stream=True)
+    temp_file_name = '__settings_file'
+    with open(temp_file_name, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+    SETTINGS_FILE = temp_file_name
+
+
 raw_data1 = requests.get("{}/publishers/{}/entities".format(INSTANCE, SOURCE1),
                          headers={'Authorization': 'Bearer {}'.format(JWT)}).json()
 
@@ -102,15 +114,13 @@ del raw_data1
 del raw_data2
 
 
-settings_file = 'salesforce-contact-kss-4d-technology-innovator'
-training_file = 'data_matching_training.json'
-
-if os.path.exists(settings_file):
-    print('reading from', settings_file)
-    with open(settings_file, 'rb') as sf:
+if os.path.exists(SETTINGS_FILE):
+    print('reading from', SETTINGS_FILE)
+    with open(SETTINGS_FILE, 'rb') as sf:
         linker = dedupe.StaticRecordLink(sf)
 else:
     # we need to have same key fields name for both data sets
+    # FIXME don't need to be hardcoded
     fields = [
         {'field': 'Name', 'type': 'String', 'has missing': True},
         {'field': 'Email', 'type': 'String', 'has missing': True},
@@ -126,10 +136,7 @@ else:
     dedupe.consoleLabel(linker)
     linker.train()
 
-    with open(training_file, 'w') as tf:
-        linker.writeTraining(tf)
-
-    with open(settings_file, 'wb') as sf:
+    with open(SETTINGS_FILE, 'wb') as sf:
         linker.writeSettings(sf)
 
 
