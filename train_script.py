@@ -2,12 +2,32 @@
 Data linkage across 2 data sets
 (for small sets as in memory processing)
 """
+from pprint import pprint
+
 import requests
 import os
 import re
 import logging
+import json
+import numpy
 
 import dedupe
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """
+    Custom encoder of numpy datatypes
+    """
+
+    def default(self, obj):
+        if isinstance(obj, numpy.integer):
+            return int(obj)
+        elif isinstance(obj, numpy.floating):
+            return float(obj)
+        elif isinstance(obj, numpy.ndarray):
+            return obj.tolist()
+        else:
+            return super(NumpyEncoder, self).default(obj)
 
 
 def pre_process(s):
@@ -100,7 +120,6 @@ if SETTINGS_FILE.startswith('http'):
                 f.write(chunk)
     SETTINGS_FILE = temp_file_name
 
-
 raw_data1 = requests.get("{}/publishers/{}/entities".format(INSTANCE, SOURCE1),
                          headers={'Authorization': 'Bearer {}'.format(JWT)}).json()
 
@@ -109,9 +128,6 @@ raw_data2 = requests.get("{}/publishers/{}/entities".format(INSTANCE, SOURCE2),
 
 data_set1 = read_data(raw_data1)
 data_set2 = read_data(raw_data2)
-
-del raw_data1
-del raw_data2
 
 
 if os.path.exists(SETTINGS_FILE):
@@ -139,9 +155,8 @@ else:
     with open(SETTINGS_FILE, 'wb') as sf:
         linker.writeSettings(sf)
 
-
 logging.info('clustering...')
-linked_records = linker.match(data_set2, data_set1, 0)
+linked_records = linker.match(data_set1, data_set2, 0.5)
 
 logging.info('%s duplicate sets', len(linked_records))
 
@@ -149,9 +164,36 @@ cluster_membership = {}
 cluster_id = None
 for cluster_id, (cluster, score) in enumerate(linked_records):
     for record_id in cluster:
-        cluster_membership[record_id] = (cluster_id, score)
+        cluster_membership[record_id] = {
+            "cluster_id": cluster_id,
+            "confidence_score": score
+        }
 
-print(cluster_membership)
+result_dataset = []
 
+for row in raw_data1:
+    row_id = row['_id']
+    if row_id in cluster_membership:
+        result_dict = {
+            '_id': row_id,
+            'cluster_id': cluster_membership[row_id]["cluster_id"],
+            'confidence_score': cluster_membership[row_id]['confidence_score']
+        }
+        result_dataset.append(result_dict)
+for row in raw_data2:
+    row_id = row['_id']
+    if row_id in cluster_membership:
+        result_dict = {
+            '_id': row_id,
+            'cluster_id': cluster_membership[row_id]["cluster_id"],
+            'confidence_score': cluster_membership[row_id]['confidence_score']
+        }
+        result_dataset.append(result_dict)
 
-
+if TARGET is not None:
+    target_url = INSTANCE + "/receivers/{}/entities".format(TARGET)
+    requests.post(target_url,
+                  json.dumps(sorted(result_dataset, key=lambda k: k['cluster_id']), cls=NumpyEncoder),
+                  headers={'Authorization': 'Bearer {}'.format(JWT), 'Content-Type': 'application/json'})
+else:
+    print(json.dumps(sorted(result_dataset, key=lambda item: item['cluster_id']), cls=NumpyEncoder))
