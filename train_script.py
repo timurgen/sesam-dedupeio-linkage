@@ -1,8 +1,19 @@
 """
-Data linkage across 2 data sets
-(for small sets as in memory processing)
+Data linkage script across 2 data sets
+(for small sets as in memory processing, or large if you have a lot of RAM)
+Usage: This script takes data from 2 published datasets and sends result to target dataset
+or outputs it if target is not  declared
+environment: {
+    JWT:            <- jwt for respective Sesam node
+    KEYS            <- which properties of data will be used for matching (must be same in both datasets)
+    INSTANCE        <- URL for Sesam node
+    SOURCE1         <- name of first, master data set
+    SOURCE2         <- name of second, slave data set
+    TARGET          <- name of target data set
+    SETTINGS_FILE   <- trained model for Dedupe.io engine, if None then active training will be performed.
+                        May be path to file on local system or URL
+}
 """
-from pprint import pprint
 
 import requests
 import os
