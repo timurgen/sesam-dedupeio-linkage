@@ -109,6 +109,8 @@ if not SOURCE2:
 # target dataset
 TARGET = os.environ.get('TARGET')
 
+ADD_ORIGINALS = os.environ.get('ADD_ORIGINALS', True)
+
 SETTINGS_FILE = os.environ.get('SETTINGS', "__settings_file.bin")
 if SETTINGS_FILE.startswith('http'):
     logging.info("Found URL, retrieving trained model")
@@ -128,7 +130,6 @@ raw_data2 = requests.get("{}/publishers/{}/entities".format(INSTANCE, SOURCE2),
 
 data_set1 = read_data(raw_data1)
 data_set2 = read_data(raw_data2)
-
 
 if os.path.exists(SETTINGS_FILE):
     print('reading from', SETTINGS_FILE)
@@ -176,18 +177,25 @@ for row in raw_data1:
     if row_id in cluster_membership:
         result_dict = {
             '_id': row_id,
+            'original_id': row['_id'],
+            'is_master': True,
             'cluster_id': cluster_membership[row_id]["cluster_id"],
             'confidence_score': cluster_membership[row_id]['confidence_score']
         }
+        if ADD_ORIGINALS:
+            result_dict['originals'] = {key: row[key] for key in KEYS}
         result_dataset.append(result_dict)
 for row in raw_data2:
     row_id = row['_id']
     if row_id in cluster_membership:
         result_dict = {
             '_id': row_id,
+            'original_id': row['_id'],
             'cluster_id': cluster_membership[row_id]["cluster_id"],
             'confidence_score': cluster_membership[row_id]['confidence_score']
         }
+        if ADD_ORIGINALS:
+            result_dict['originals'] = {key: row[key] for key in KEYS}
         result_dataset.append(result_dict)
 
 if TARGET is not None:
