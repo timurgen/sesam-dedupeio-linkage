@@ -88,7 +88,7 @@ if isinstance(KEYS, str):
 
 if not KEYS:
     logging.error("No keys for analysis were found, checking will not be possible.")
-    # exit(1)
+    exit(1)
 
 # full API URL like 'https://datahub-xxxxxxx.sesam.cloud/api'
 # we support only same source<->target instance
@@ -137,12 +137,9 @@ if os.path.exists(SETTINGS_FILE):
         linker = dedupe.StaticRecordLink(sf)
 else:
     # we need to have same key fields name for both data sets
-    # FIXME don't need to be hardcoded
-    fields = [
-        {'field': 'Name', 'type': 'String', 'has missing': True},
-        {'field': 'Email', 'type': 'String', 'has missing': True},
-        {'field': 'MobilePhone', 'type': 'String', 'has missing': True}
-    ]
+    fields = []
+    for key in KEYS:
+        fields.append({'field': key, 'type': 'String', 'has missing': True})
 
     linker = dedupe.RecordLink(fields)
 
