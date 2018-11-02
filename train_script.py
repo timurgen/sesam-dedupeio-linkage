@@ -2,7 +2,9 @@
 Data linkage script across 2 data sets
 (for small sets as in memory processing, or large if you have a lot of RAM)
 Usage: This script takes data from 2 published datasets and sends result to target dataset
-or outputs it if target is not  declared
+or outputs it if target is not  declared.
+Running this script as service on a small size Sesam (with GDPR setup) node will most probably cause out of memory,
+even for small data sets.
 environment: {
     JWT:            <- jwt for respective Sesam node
     KEYS            <- which properties of data will be used for matching (must be same in both datasets)
