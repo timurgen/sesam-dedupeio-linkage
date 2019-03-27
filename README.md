@@ -10,14 +10,15 @@ Usage: This script takes data from 2 published datasets and sends result to targ
 or outputs it if target is not  declared.
 Running this script as service on a small size Sesam (with GDPR setup) node will most probably cause out of memory,
 even for small data sets.
-environment: {
-    JWT:            <- jwt for respective Sesam node
-    KEYS            <- which properties of data will be used for matching (must be same in both datasets)
-    INSTANCE        <- URL for Sesam node
-    SOURCE1         <- name of first, master data set
-    SOURCE2         <- name of second, slave data set
-    TARGET          <- name of target data set
-    SETTINGS_FILE   <- trained model for Dedupe.io engine, if None then active training will be performed.
-                        May be path to file on local system or URL
-}
+
+environment: {  
+    JWT:            <- jwt for respective Sesam node  
+    KEYS            <- which properties of data will be used for matching (must be same in both datasets)  
+    INSTANCE        <- URL for Sesam node  
+    SOURCE1         <- name of first, master data set  
+    SOURCE2         <- name of second, slave data set  
+    TARGET          <- name of target data set  
+    SETTINGS_FILE   <- trained model for Dedupe.io engine, if None then active training will be performed.  
+                        May be path to file on local system or URL  
+}  
 
